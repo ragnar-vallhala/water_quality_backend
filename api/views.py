@@ -1,8 +1,8 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter
 from django.utils import timezone
@@ -18,31 +18,21 @@ from .serializers import (
     MaintainerSerializer,
     RegisterMaintainerSerializer
 )
-from django.http import JsonResponse
-from django.views.decorators.csrf import ensure_csrf_cookie
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
 
 # ------------------------------------------------------
-#                     CSRF VIEW
+#                   USER INFO
 # ------------------------------------------------------
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-@ensure_csrf_cookie
-def csrf(request):
-    return JsonResponse({"detail": "CSRF cookie set"})
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def user_info(request):
     user = request.user
     data = MaintainerSerializer(user).data
     return Response(data)
+
+
 # ------------------------------------------------------
 #                       FILTERS
 # ------------------------------------------------------
-
 class WaterQualityFilter(filters.FilterSet):
     date = filters.DateFilter(field_name="date_time", lookup_expr="date")
     min_tds = filters.NumberFilter(field_name="tds", lookup_expr="gte")
@@ -65,7 +55,6 @@ class MaintenanceFilter(filters.FilterSet):
 # ------------------------------------------------------
 #               REGISTER NEW MAINTAINER
 # ------------------------------------------------------
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
@@ -74,30 +63,22 @@ def register(request):
     if serializer.is_valid():
         user = serializer.save()
         token, _ = Token.objects.get_or_create(user=user)
-
-        res = Response({"message": "Maintainer registered", "maintainer_id": user.id})
-
-        res.set_cookie(
-            key="auth_token",
-            value=token.key,
-            httponly=True,
-            secure=False,   # set to True for HTTPS
-            samesite="Lax",
-            max_age=60 * 60 * 24 * 7,
-        )
-
-        return res
+        return Response({
+            "message": "Maintainer registered",
+            "maintainer_id": user.id,
+            "token": token.key  # return token directly
+        })
 
     return Response(serializer.errors, status=400)
 
 # ------------------------------------------------------
-#               LOGOUT API
+#                     LOGOUT API
 # ------------------------------------------------------
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def logout(request):
-    res = Response({"message": "Logged out"})
-    res.delete_cookie('auth_token')
-    return res
+    request.auth.delete()  # deletes the token from DB
+    return Response({"message": "Logged out"})
 
 # ------------------------------------------------------
 #                     LOGIN API
@@ -113,30 +94,17 @@ class LoginMaintainerView(ObtainAuthToken):
         token = Token.objects.get(key=response.data['token'])
         maintainer = token.user
 
-        # Prepare API response
-        res = Response({
+        return Response({
             "message": "Logged in",
             "maintainer_id": maintainer.id,
-            "email": maintainer.email
+            "email": maintainer.email,
+            "token": token.key  # send token in JSON
         })
-
-        # Set HTTP-only cookie
-        res.set_cookie(
-            key="auth_token",
-            value=token.key,
-            httponly=True,
-            secure=False,        # ❗ set True in production (HTTPS)
-            samesite='Lax',
-            max_age=60 * 60 * 24 * 7  # 7 days
-        )
-
-        return res
 
 
 # ------------------------------------------------------
 #                     VIEWSETS
 # ------------------------------------------------------
-
 class WaterUnitViewSet(viewsets.ModelViewSet):
     queryset = WaterUnit.objects.all()
     serializer_class = WaterUnitSerializer
@@ -167,10 +135,8 @@ class MaintenanceViewSet(viewsets.ModelViewSet):
     ordering = ['-datetime']
 
     def get_permissions(self):
-        # Allow GET without authentication
         if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
-            return []   # no permission classes
-        # All other methods need authentication
+            return []  # no auth needed for read
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
@@ -178,5 +144,3 @@ class MaintenanceViewSet(viewsets.ModelViewSet):
             datetime=timezone.now(),
             maintainer=self.request.user
         )
-
-

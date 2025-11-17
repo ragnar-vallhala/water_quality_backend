@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     WaterUnitViewSet, WaterQualityViewSet, MaintenanceViewSet,
-    register, LoginMaintainerView, logout, csrf, user_info
+    register, LoginMaintainerView, logout, user_info
 )
 
 router = DefaultRouter()
@@ -16,7 +16,6 @@ urlpatterns = [
     path('login/', LoginMaintainerView.as_view(), name="login"),  
     path('logout/', logout, name="logout"),  
     path('', include(router.urls)),
-    path('csrf/', csrf, name="csrf"),
     path('user/', user_info, name="user_info"),
 ]
 
