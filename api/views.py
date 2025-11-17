@@ -81,8 +81,8 @@ def register(request):
             key="auth_token",
             value=token.key,
             httponly=True,
-            secure=True,   # set to True for HTTPS
-            samesite="None",
+            secure=False,   # set to True for HTTPS
+            samesite="Lax",
             max_age=60 * 60 * 24 * 7,
         )
 
@@ -125,8 +125,8 @@ class LoginMaintainerView(ObtainAuthToken):
             key="auth_token",
             value=token.key,
             httponly=True,
-            secure=True,        # ❗ set True in production (HTTPS)
-            samesite='None',
+            secure=False,        # ❗ set True in production (HTTPS)
+            samesite='Lax',
             max_age=60 * 60 * 24 * 7  # 7 days
         )
 
