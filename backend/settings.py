@@ -68,8 +68,8 @@ CSRF_COOKIE_SAMESITE = "None"
 CSRF_COOKIE_SECURE = False  # True in production with HTTPS
 
 SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = True  # True in production with HTTPS
-# SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False  # True in production with HTTPS
+SESSION_COOKIE_HTTPONLY = True
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8081",
