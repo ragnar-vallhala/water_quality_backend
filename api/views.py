@@ -26,6 +26,9 @@ from rest_framework.permissions import AllowAny
 # ------------------------------------------------------
 #                     CSRF VIEW
 # ------------------------------------------------------
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
 @ensure_csrf_cookie
 def csrf(request):
     return JsonResponse({"detail": "CSRF cookie set"})
