@@ -64,10 +64,10 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 
 # CSRF & session cookies
-CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = False  # True in production with HTTPS
 
-SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = False  # True in production with HTTPS
 SESSION_COOKIE_HTTPONLY = True
 
